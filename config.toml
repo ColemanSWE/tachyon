@@ -1,0 +1,21 @@
+[server]
+host = "127.0.0.1"
+port = 8080
+max_connections = 1000
+timeout_seconds = 30
+
+[upstream]
+servers = [
+    "http://backend1.example.com:80",
+    "http://backend2.example.com:80"
+]
+load_balancing = "RoundRobin"
+
+[cache]
+enabled = true
+max_size_mb = 100
+ttl_seconds = 3600
+
+[rate_limit]
+requests_per_minute = 1000
+burst_size = 100 
