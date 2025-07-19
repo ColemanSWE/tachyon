@@ -1,4 +1,6 @@
 use clap::Parser;
+use tokio::net::TcpListener;
+use std::io;
 
 #[derive(Parser, Debug)]
 #[command(name = "tachyon-proxy")]
@@ -17,7 +19,17 @@ async fn main() -> anyhow::Result<()> {
 
     println!("Starting Tachyon Proxy on {}:{}", args.host, args.port);
     
-    // TODO: Implement proxy logic
-    
-    Ok(())
+    let addr = format!("{}:{}", args.host, args.port);
+    let listener = TcpListener::bind(&addr).await?;
+    println!("Listening on {}", addr);
+
+    loop {
+        let (socket, addr) = listener.accept().await?;
+        println!("New connection from {}", addr);
+        
+        tokio::spawn(async move {
+            // TODO: Handle connection
+            println!("Handling connection from {}", addr);
+        });
+    }
 } 
