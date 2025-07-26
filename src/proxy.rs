@@ -1,5 +1,5 @@
 use tokio::net::{TcpListener, TcpStream};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncReadExt, AsyncWriteExt, copy_bidirectional};
 use tokio::time::{timeout, Duration};
 use tracing::{info, error, debug, warn};
 use std::net::SocketAddr;
@@ -82,6 +82,56 @@ impl Proxy {
         
         info!("{} {} {} from {}", request.method, request.path, request.version, client_addr);
         
+        // Handle CONNECT method for HTTPS tunneling
+        if request.method.to_uppercase() == "CONNECT" {
+            Self::handle_connect(client_socket, &request, timeout_duration).await?;
+        } else {
+            // Handle regular HTTP requests
+            Self::handle_http(client_socket, client_addr, &request, &buffer[..n], target, timeout_duration).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn handle_connect(
+        mut client_socket: TcpStream,
+        request: &http::Request,
+        timeout_duration: Duration,
+    ) -> Result<()> {
+        // Parse the target from CONNECT request (format: host:port)
+        let target_addr = &request.path;
+        debug!("CONNECT request to {}", target_addr);
+
+        // Connect to the target server
+        let target_socket = timeout(timeout_duration, TcpStream::connect(target_addr)).await
+            .map_err(|_| anyhow::anyhow!("Timeout connecting to target for CONNECT"))?
+            .map_err(|e| anyhow::anyhow!("Failed to connect to target for CONNECT: {}", e))?;
+
+        // Send 200 Connection Established response
+        let response = b"HTTP/1.1 200 Connection Established\r\n\r\n";
+        timeout(timeout_duration, client_socket.write_all(response)).await
+            .map_err(|_| anyhow::anyhow!("Timeout writing CONNECT response"))?
+            .map_err(|e| anyhow::anyhow!("Failed to write CONNECT response: {}", e))?;
+
+        info!("CONNECT tunnel established to {}", target_addr);
+
+        // Start bidirectional copying (tunnel mode)
+        if let Err(e) = copy_bidirectional(&mut client_socket, &mut target_socket).await {
+            debug!("Tunnel closed: {}", e);
+        }
+
+        info!("CONNECT tunnel closed for {}", target_addr);
+        Ok(())
+    }
+
+    async fn handle_http(
+        mut client_socket: TcpStream,
+        client_addr: SocketAddr,
+        _request: &http::Request,
+        request_data: &[u8],
+        target: Option<String>,
+        timeout_duration: Duration,
+    ) -> Result<()> {
         let target_host = target.unwrap_or_else(|| "httpbin.org:80".to_string());
         debug!("Connecting to target: {}", target_host);
         
@@ -90,7 +140,7 @@ impl Proxy {
             .map_err(|e| anyhow::anyhow!("Failed to connect to target {}: {}", target_host, e))?;
         
         // Forward the request
-        timeout(timeout_duration, target_socket.write_all(&buffer[..n])).await
+        timeout(timeout_duration, target_socket.write_all(request_data)).await
             .map_err(|_| anyhow::anyhow!("Timeout writing to target"))?
             .map_err(|e| anyhow::anyhow!("Failed to write to target: {}", e))?;
 
