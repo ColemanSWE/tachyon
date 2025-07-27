@@ -28,6 +28,16 @@ impl Proxy {
         }
     }
 
+    pub fn with_config(host: String, port: u16, target: Option<String>, max_connections: usize) -> Self {
+        Self { 
+            host, 
+            port, 
+            target,
+            max_connections,
+            timeout: Duration::from_secs(30),
+        }
+    }
+
     pub async fn run(&self) -> Result<()> {
         let addr = format!("{}:{}", self.host, self.port);
         let listener = TcpListener::bind(&addr).await?;
