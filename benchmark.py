@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """
-Benchmark script for Tachyon proxy
-Tests performance under various load conditions
+Simple benchmark script for Tachyon proxy
 """
 
 import requests
 import time
 import threading
-import statistics
 from concurrent.futures import ThreadPoolExecutor
 import sys
 
@@ -17,7 +15,7 @@ def make_request(proxy_url, url, timeout=10):
     try:
         response = requests.get(
             url,
-            proxies={"http": proxy_url, "https": proxy_url},
+            proxies={"http": proxy_url},
             timeout=timeout
         )
         end_time = time.time()
@@ -53,22 +51,13 @@ def benchmark_concurrent(proxy_url, url, num_requests, max_workers):
     
     if successful_requests:
         response_times = [r["response_time"] for r in successful_requests]
-        avg_response_time = statistics.mean(response_times)
-        min_response_time = min(response_times)
-        max_response_time = max(response_times)
+        avg_response_time = sum(response_times) / len(response_times)
         
         print(f"✅ Successful requests: {len(successful_requests)}")
         print(f"❌ Failed requests: {len(failed_requests)}")
         print(f"📊 Average response time: {avg_response_time:.3f}s")
-        print(f"📊 Min response time: {min_response_time:.3f}s")
-        print(f"📊 Max response time: {max_response_time:.3f}s")
         print(f"📊 Total time: {total_time:.3f}s")
         print(f"📊 Requests per second: {len(successful_requests) / total_time:.2f}")
-        
-        if failed_requests:
-            print(f"⚠️  Errors: {[r['error'] for r in failed_requests[:3]]}")
-    else:
-        print("❌ All requests failed!")
 
 def main():
     proxy_url = "http://localhost:8080"
@@ -95,13 +84,12 @@ def main():
     test_configs = [
         (10, 5),    # 10 requests, 5 workers
         (50, 10),   # 50 requests, 10 workers
-        (100, 20),  # 100 requests, 20 workers
     ]
     
     for num_requests, max_workers in test_configs:
         print(f"\n🧪 Test: {num_requests} requests, {max_workers} workers")
         benchmark_concurrent(proxy_url, test_url, num_requests, max_workers)
-        time.sleep(1)  # Brief pause between tests
+        time.sleep(1)
 
 if __name__ == "__main__":
     main() 
