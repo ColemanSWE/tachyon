@@ -113,7 +113,7 @@ impl Proxy {
         debug!("CONNECT request to {}", target_addr);
 
         // Connect to the target server
-        let target_socket = timeout(timeout_duration, TcpStream::connect(target_addr)).await
+        let mut target_socket = timeout(timeout_duration, TcpStream::connect(target_addr)).await
             .map_err(|_| anyhow::anyhow!("Timeout connecting to target for CONNECT"))?
             .map_err(|e| anyhow::anyhow!("Failed to connect to target for CONNECT: {}", e))?;
 
