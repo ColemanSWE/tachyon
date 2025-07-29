@@ -18,16 +18,6 @@ pub struct Proxy {
 }
 
 impl Proxy {
-    pub fn new(host: String, port: u16, target: Option<String>) -> Self {
-        Self { 
-            host, 
-            port, 
-            target,
-            max_connections: 100,
-            timeout: Duration::from_secs(30),
-        }
-    }
-
     pub fn with_config(host: String, port: u16, target: Option<String>, max_connections: usize) -> Self {
         Self { 
             host, 

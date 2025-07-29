@@ -6,7 +6,7 @@ mod proxy;
 mod config;
 
 #[derive(Parser, Debug)]
-#[command(name = "tachyon-proxy")]
+#[command(name = "tachyon")]
 #[command(about = "A high-performance HTTP proxy written in Rust")]
 struct Args {
     #[arg(short, long, default_value = "8080")]

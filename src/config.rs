@@ -41,9 +41,5 @@ impl ProxyConfig {
         Ok(config)
     }
 
-    pub fn to_file(&self, path: &str) -> Result<()> {
-        let content = toml::to_string_pretty(self)?;
-        std::fs::write(path, content)?;
-        Ok(())
-    }
+
 } 

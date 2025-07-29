@@ -5,6 +5,7 @@ pub struct Request {
     pub method: String,
     pub path: String,
     pub version: String,
+    #[allow(dead_code)]
     pub headers: HashMap<String, String>,
 }
 

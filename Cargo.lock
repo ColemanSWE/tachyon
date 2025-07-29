@@ -653,7 +653,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tachyon-proxy"
+name = "tachyon"
 version = "0.1.0"
 dependencies = [
  "anyhow",
